@@ -69,7 +69,8 @@ fn main() {
 
         let image_relative_url = parse_image_url::get_page_image_url(&html).unwrap_or_else(|e| {
             error!("Failed to parse the page image URL: {:?}", e);
-            debug!("HTML: {}", html);
+            // debug!("HTML: {}", html);
+            println!("HTML: {}", html);
             panic!("Failed to parse the page image URL");
         });
 
@@ -78,7 +79,7 @@ fn main() {
         let image_url = format!("{}{}", BASE_EBOOK_HOST, image_relative_url);
 
         // すこし待機
-        std::thread::sleep(std::time::Duration::from_millis(500));
+        std::thread::sleep(std::time::Duration::from_millis(1000));
 
         // ファイルのダウンロード
         let response = client.get(&image_url).call().unwrap_or_else(|e| {
