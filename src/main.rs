@@ -1,3 +1,5 @@
+use std::fmt::Debug;
+
 use generate_anchor_page_url::generate_anchor_page_url;
 use parse_metadata::extract_metadata;
 use proconio::input;
@@ -24,6 +26,10 @@ fn main() {
     let response = response.unwrap();
     let url = response.get_url().to_string();
     let html = response.into_string().unwrap();
+    let cookies = client.cookie_store();
+    println!("URL: {}", url);
+    let cookies_hoge = cookies.iter_any().collect::<Vec<_>>();
+    println!("Cookies: {:?}", cookies_hoge);
 
     // メタデータを取得
     let metadata = extract_metadata(&html).unwrap();
@@ -35,8 +41,24 @@ fn main() {
         let anchor_page_url = generate_anchor_page_url(&url, i);
         println!("Anchor page URL: {}", anchor_page_url);
 
+        // headers = {
+        //     'X-Requested-With': 'XMLHttpRequest',
+        //     'Wicket-Ajax': 'true',
+        //     'Wicket-Ajax-BaseURL': '{}'.format(base_url)
+        // }
+
+        print!("Accessing the anchor page URL...");
+
         // アンカーページにアクセス
-        let response = client.get(&anchor_page_url).call();
+        let response = client
+            .get(&anchor_page_url)
+            .set("X-Requested-With", "XMLHttpRequest")
+            .set("Wicket-Ajax", "true")
+            .set("Wicket-Ajax-BaseURL", &url)
+            .call();
+
+        print!("Accessed the anchor page URL");
+
         if (response.is_err()) {
             panic!("Failed to access the anchor page URL");
         }
