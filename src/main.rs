@@ -7,6 +7,8 @@ use dialoguer::Input;
 use log::{debug, error, info};
 use ureq::agent;
 
+const BASE_EBOOK_HOST: &str = "https://elib.maruzen.co.jp";
+
 fn main() {
     // ロガーの初期化
     env_logger::Builder::from_env(env_logger::Env::default().default_filter_or("info")).init();
@@ -65,24 +67,26 @@ fn main() {
 
         let html = response.into_string().unwrap();
 
-        let page_image_url = parse_image_url::get_page_image_url(&html).unwrap_or_else(|e| {
+        let image_relative_url = parse_image_url::get_page_image_url(&html).unwrap_or_else(|e| {
             error!("Failed to parse the page image URL: {:?}", e);
             debug!("HTML: {}", html);
             panic!("Failed to parse the page image URL");
         });
 
-        info!("Page image URL: {}", page_image_url);
+        info!("Page image URL: {}", image_relative_url);
+
+        let image_url = format!("{}{}", BASE_EBOOK_HOST, image_relative_url);
 
         // すこし待機
         std::thread::sleep(std::time::Duration::from_millis(500));
 
         // ファイルのダウンロード
-        let response = client.get(&page_image_url).call().unwrap_or_else(|e| {
+        let response = client.get(&image_url).call().unwrap_or_else(|e| {
             error!("Failed to download the image file: {:?}", e);
             panic!("Failed to download the image file");
         });
-        let mut output_image =
-            std::fs::File::create(format!("page{}.jpg", i)).unwrap_or_else(|e| {
+        let mut output_image = std::fs::File::create(format!("testimage/page{}.jpg", i))
+            .unwrap_or_else(|e| {
                 error!("Failed to create the image file: {:?}", e);
                 panic!("Failed to create the image file");
             });
