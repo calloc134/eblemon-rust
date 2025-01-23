@@ -1,4 +1,4 @@
-use anyhow::{anyhow, Context, Result};
+use anyhow::Result;
 use scraper::{Html, Selector};
 use thiserror::Error;
 

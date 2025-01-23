@@ -7,6 +7,9 @@ edition = "2021"
 
 [dependencies]
 anyhow = "1.0.95"
+dialoguer = "0.11.0"
+env_logger = "0.11.6"
+log = "0.4.25"
 proconio = "0.5.0"
 scraper = "0.13"
 thiserror = "2.0.11"
