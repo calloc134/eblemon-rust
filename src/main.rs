@@ -13,25 +13,17 @@ fn main() {
     }
 
     // セッションを作成
-    // let client = reqwest::blocking::Client::new();
     let client = agent();
 
     // アクセス
-    // let response = client.get(&url).send().unwrap();
-    // let url = response.url().clone();
-    // let url_str = url.as_str();
     let response = client.get(&url).call();
     if (response.is_err()) {
         panic!("Failed to access the URL");
     }
 
     let response = response.unwrap();
-
-    let url_str = response.get_url().to_string();
+    let url = response.get_url().to_string();
     let html = response.into_string().unwrap();
-
-    // print!("URL: {}", url_str);
-    // let html = response.text().unwrap();
 
     // メタデータを取得
     let metadata = extract_metadata(&html).unwrap();
@@ -39,16 +31,16 @@ fn main() {
     println!("Total pages: {}", metadata.total_pages);
 
     for i in 1..=metadata.total_pages {
-        let anchor_page_url = generate_anchor_page_url(&url_str, i);
+        // アンカーページのURLを生成
+        let anchor_page_url = generate_anchor_page_url(&url, i);
         println!("Anchor page URL: {}", anchor_page_url);
 
         // アンカーページにアクセス
-        // let response = client.get(&anchor_page_url).send().unwrap();
-        // let html = response.text().unwrap();
         let response = client.get(&anchor_page_url).call();
         if (response.is_err()) {
             panic!("Failed to access the anchor page URL");
         }
+
         let response = response.unwrap();
         let html = response.into_string().unwrap();
         print!("HTML: {}", html);
