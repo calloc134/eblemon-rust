@@ -1,3 +1,5 @@
+use std::fmt::format;
+
 use generate_anchor_page_url::generate_anchor_page_url;
 use parse_metadata::extract_metadata;
 mod generate_anchor_page_url;
@@ -48,18 +50,23 @@ fn main() {
     );
 
     info!("Start downloading the image files...");
+    let next_page_url = format!("{}-1.IBehaviorListener.0-browseForm-nextPageSubmit", url);
+    println!("Next page URL: {}", next_page_url);
     for i in 1..=metadata.total_pages {
-        // アンカーページのURLを生成
-        let anchor_page_url = generate_anchor_page_url(&url, i);
-        debug!("Anchor page URL: {}", anchor_page_url);
-
-        // アンカーページにアクセス
+        // 次のページにアクセス
         let response = client
-            .get(&anchor_page_url)
+            .post(&next_page_url)
             .set("X-Requested-With", "XMLHttpRequest")
             .set("Wicket-Ajax", "true")
-            .set("Wicket-Ajax-BaseURL", &url)
-            .call()
+            .set("Wicket-Ajax-BaseURL", &BASE_EBOOK_HOST)
+            // パラメータを設定
+            .send_form(&[
+                ("id100_hf_0", ""),
+                ("changeScale", "1"),
+                ("pageNumEditor", &i.to_string()),
+                ("nextPageSubmit", "1"),
+            ])
+            // .call()
             .unwrap_or_else(|e| {
                 error!("Failed to access the anchor page URL: {:?}", e);
                 panic!("Failed to access the anchor page URL");
