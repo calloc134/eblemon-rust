@@ -67,7 +67,7 @@ fn main() {
     let next_page_url = format!("{}-1.IBehaviorListener.0-browseForm-nextPageSubmit", url);
 
     // プログレスバーの初期化
-    let bar = ProgressBar::new(metadata.total_pages as u64);
+    let bar = ProgressBar::new((metadata.total_pages - 1).into());
 
     // 先頭の白ページを飛ばすために1ページ目をスキップ
     client
