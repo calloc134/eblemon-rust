@@ -69,7 +69,25 @@ fn main() {
     // プログレスバーの初期化
     let bar = ProgressBar::new(metadata.total_pages as u64);
 
-    for i in 1..=metadata.total_pages {
+    // 先頭の白ページを飛ばすために1ページ目をスキップ
+    client
+        .post(&next_page_url)
+        .set("X-Requested-With", "XMLHttpRequest")
+        .set("Wicket-Ajax", "true")
+        .set("Wicket-Ajax-BaseURL", &BASE_EBOOK_HOST)
+        .send_form(&[
+            ("id100_hf_0", ""),
+            ("changeScale", "1"),
+            ("pageNumEditor", "1"),
+            ("nextPageSubmit", "1"),
+        ])
+        .unwrap_or_else(|e| {
+            error!("Failed to access the anchor page URL: {:?}", e);
+            panic!("Failed to access the anchor page URL");
+        });
+
+    // -2でアクセスすると何故かうまく行く。ここは根拠がない
+    for i in 0..(metadata.total_pages - 2) {
         // 次のページにアクセス
         let response = client
             .post(&next_page_url)
@@ -80,7 +98,7 @@ fn main() {
             .send_form(&[
                 ("id100_hf_0", ""),
                 ("changeScale", "1"),
-                ("pageNumEditor", &i.to_string()),
+                ("pageNumEditor", i.to_string().as_str()),
                 ("nextPageSubmit", "1"),
             ])
             // .call()
@@ -93,12 +111,10 @@ fn main() {
 
         let image_relative_url = parse_image_url::get_page_image_url(&html).unwrap_or_else(|e| {
             error!("Failed to parse the page image URL: {:?}", e);
-            // debug!("HTML: {}", html);
+            println!("i: {}", i);
             println!("HTML: {}", html);
             panic!("Failed to parse the page image URL");
         });
-
-        info!("Page image URL: {}", image_relative_url);
 
         let image_url = format!("{}{}", BASE_EBOOK_HOST, image_relative_url);
 
@@ -108,7 +124,7 @@ fn main() {
             panic!("Failed to download the image file");
         });
         let mut output_image =
-            std::fs::File::create(format!("{}/{:04}.jpg", download_dir, i.to_string()))
+            std::fs::File::create(format!("{}/{}.jpg", download_dir, i.to_string()))
                 .unwrap_or_else(|e| {
                     error!("Failed to create the image file: {:?}", e);
                     panic!("Failed to create the image file");
