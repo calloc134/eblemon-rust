@@ -1,3 +1,4 @@
+use indicatif::ProgressBar;
 use parse_metadata::extract_metadata;
 mod parse_image_url;
 mod parse_metadata;
@@ -45,6 +46,9 @@ fn main() {
 
     // 次のページにアクセスするためのURLを作成
     let next_page_url = format!("{}-1.IBehaviorListener.0-browseForm-nextPageSubmit", url);
+
+    // プログレスバーの初期化
+    let bar = ProgressBar::new(metadata.total_pages as u64);
 
     for i in 1..=metadata.total_pages {
         // 次のページにアクセス
@@ -94,7 +98,10 @@ fn main() {
             error!("Failed to write the image file: {:?}", e);
             panic!("Failed to write the image file");
         });
+
+        bar.inc(1);
     }
 
     info!("All image files have been downloaded");
+    bar.finish_with_message("Finished");
 }
