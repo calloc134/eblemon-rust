@@ -11,10 +11,6 @@ fn main() {
     // ロガーの初期化
     env_logger::Builder::from_env(env_logger::Env::default().default_filter_or("info")).init();
     // まずURLを取得
-    // info!("Please input the URL of the target page");
-    // input! {
-    //     url: String,
-    // }
     let url = Input::<String>::new()
         .with_prompt("Please input the URL of the target page")
         .interact()
@@ -46,8 +42,10 @@ fn main() {
     );
 
     info!("Start downloading the image files...");
+
+    // 次のページにアクセスするためのURLを作成
     let next_page_url = format!("{}-1.IBehaviorListener.0-browseForm-nextPageSubmit", url);
-    println!("Next page URL: {}", next_page_url);
+
     for i in 1..=metadata.total_pages {
         // 次のページにアクセス
         let response = client
@@ -80,9 +78,6 @@ fn main() {
         info!("Page image URL: {}", image_relative_url);
 
         let image_url = format!("{}{}", BASE_EBOOK_HOST, image_relative_url);
-
-        // すこし待機
-        std::thread::sleep(std::time::Duration::from_millis(1000));
 
         // ファイルのダウンロード
         let response = client.get(&image_url).call().unwrap_or_else(|e| {
