@@ -123,12 +123,11 @@ fn main() {
             error!("Failed to download the image file: {:?}", e);
             panic!("Failed to download the image file");
         });
-        let mut output_image =
-            std::fs::File::create(format!("{}/{}.jpg", download_dir, i.to_string()))
-                .unwrap_or_else(|e| {
-                    error!("Failed to create the image file: {:?}", e);
-                    panic!("Failed to create the image file");
-                });
+        let mut output_image = std::fs::File::create(format!("{}/{}.jpg", download_dir, i + 1))
+            .unwrap_or_else(|e| {
+                error!("Failed to create the image file: {:?}", e);
+                panic!("Failed to create the image file");
+            });
 
         std::io::copy(&mut response.into_reader(), &mut output_image).unwrap_or_else(|e| {
             error!("Failed to write the image file: {:?}", e);
