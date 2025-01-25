@@ -1,12 +1,14 @@
-use indicatif::ProgressBar;
-use parse_metadata::extract_metadata;
 mod parse_image_url;
 mod parse_metadata;
+mod sanitize_to_filename;
 use dialoguer::Input;
+use indicatif::ProgressBar;
 use log::{error, info};
+use parse_metadata::extract_metadata;
 use ureq::agent;
 
 const BASE_EBOOK_HOST: &str = "https://elib.maruzen.co.jp";
+const DOWNLOAD_BASE_DIR: &str = "downloads";
 
 fn main() {
     // ロガーの初期化
@@ -43,6 +45,23 @@ fn main() {
     );
 
     info!("Start downloading the image files...");
+
+    // ダウンロード用のディレクトリを作成
+    let download_dir = format!(
+        "{}/{}",
+        DOWNLOAD_BASE_DIR,
+        sanitize_to_filename::sanitize_to_filename(&metadata.title)
+    );
+
+    // ディレクトリが存在しない場合は作成
+    if !std::path::Path::new(&download_dir).exists() {
+        std::fs::create_dir(&download_dir).unwrap_or_else(|e| {
+            error!("Failed to create the directory: {:?}", e);
+            panic!("Failed to create the directory");
+        });
+    }
+
+    // ダウンロード再開機能はとりあえず実装しない
 
     // 次のページにアクセスするためのURLを作成
     let next_page_url = format!("{}-1.IBehaviorListener.0-browseForm-nextPageSubmit", url);
@@ -88,11 +107,12 @@ fn main() {
             error!("Failed to download the image file: {:?}", e);
             panic!("Failed to download the image file");
         });
-        let mut output_image = std::fs::File::create(format!("testimage/page{}.jpg", i))
-            .unwrap_or_else(|e| {
-                error!("Failed to create the image file: {:?}", e);
-                panic!("Failed to create the image file");
-            });
+        let mut output_image =
+            std::fs::File::create(format!("{}/{:04}.jpg", download_dir, i.to_string()))
+                .unwrap_or_else(|e| {
+                    error!("Failed to create the image file: {:?}", e);
+                    panic!("Failed to create the image file");
+                });
 
         std::io::copy(&mut response.into_reader(), &mut output_image).unwrap_or_else(|e| {
             error!("Failed to write the image file: {:?}", e);
