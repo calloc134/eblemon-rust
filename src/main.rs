@@ -1,12 +1,8 @@
-use std::fmt::format;
-
-use generate_anchor_page_url::generate_anchor_page_url;
 use parse_metadata::extract_metadata;
-mod generate_anchor_page_url;
 mod parse_image_url;
 mod parse_metadata;
 use dialoguer::Input;
-use log::{debug, error, info};
+use log::{error, info};
 use ureq::agent;
 
 const BASE_EBOOK_HOST: &str = "https://elib.maruzen.co.jp";
