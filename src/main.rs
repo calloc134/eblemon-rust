@@ -62,15 +62,9 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
 
     // -2でアクセスすると何故かうまく行く。ここは根拠がない
     for i in 0..(metadata.total_pages - 2) {
-        fetch::fetch_and_download_image(
+        fetch::download_page_image(
             &client,
             &next_page_url,
-            &[
-                ("id100_hf_0", ""),
-                ("changeScale", "1"),
-                ("pageNumEditor", i.to_string().as_str()),
-                ("nextPageSubmit", "1"),
-            ],
             BASE_EBOOK_HOST,
             &download_dir,
             i + 1,

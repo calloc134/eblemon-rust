@@ -95,6 +95,30 @@ pub fn fetch_and_download_image(
     Ok(())
 }
 
+pub fn download_page_image(
+    client: &ureq::Agent,
+    url: &str,
+    base_host: &str,
+    download_dir: &str,
+    page_number: u32,
+) -> Result<(), Box<dyn std::error::Error>> {
+    let page_str = page_number.to_string();
+    let form_params = [
+        ("id100_hf_0", ""),
+        ("changeScale", "1"),
+        ("pageNumEditor", page_str.as_str()),
+        ("nextPageSubmit", "1"),
+    ];
+    fetch_and_download_image(
+        client,
+        url,
+        &form_params,
+        base_host,
+        download_dir,
+        page_number,
+    )
+}
+
 pub fn skip_first_page(
     client: &ureq::Agent,
     next_page_url: &str,
