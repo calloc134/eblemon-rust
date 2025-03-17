@@ -1,14 +1,14 @@
+mod constants;
+mod fetch;
 mod parse_image_url;
 mod parse_metadata;
-mod sanitize_to_filename;
+mod sanitize_to_filename; // added new module
+use constants::{BASE_EBOOK_HOST, DOWNLOAD_BASE_DIR};
 use dialoguer::Input;
 use indicatif::ProgressBar;
 use log::{error, info};
 use parse_metadata::extract_metadata;
 use ureq::agent;
-
-const BASE_EBOOK_HOST: &str = "https://elib.maruzen.co.jp";
-const DOWNLOAD_BASE_DIR: &str = "downloads";
 
 fn main() {
     // ロガーの初期化
@@ -26,16 +26,9 @@ fn main() {
     let client = agent();
     info!("Successfully created a session. Start accessing the URL");
 
-    // アクセス
-    let response = client.get(&url).call().unwrap_or_else(|e| {
-        error!("Failed to access the URL: {:?}", e);
-        panic!("Failed to access the URL");
-    });
-
-    info!("Successfully accessed. Start extracting metadata");
-
-    let url = response.get_url().to_string();
-    let html = response.into_string().unwrap();
+    // GETリクエスト: データフェッチ関数に切り出し
+    let (url, html) = fetch::fetch_html(&client, &url);
+    info!("Successfully fetched HTML. Start extracting metadata");
 
     // メタデータを取得
     let metadata = extract_metadata(&html).unwrap();
@@ -61,8 +54,6 @@ fn main() {
         });
     }
 
-    // ダウンロード再開機能はとりあえず実装しない
-
     // 次のページにアクセスするためのURLを作成
     let next_page_url = format!("{}-1.IBehaviorListener.0-browseForm-nextPageSubmit", url);
 
@@ -70,44 +61,33 @@ fn main() {
     let bar = ProgressBar::new((metadata.total_pages - 1).into());
 
     // 先頭の白ページを飛ばすために1ページ目をスキップ
-    client
-        .post(&next_page_url)
-        .set("X-Requested-With", "XMLHttpRequest")
-        .set("Wicket-Ajax", "true")
-        .set("Wicket-Ajax-BaseURL", &BASE_EBOOK_HOST)
-        .send_form(&[
+    let _ = fetch::fetch_post_html(
+        &client,
+        &next_page_url,
+        &[
             ("id100_hf_0", ""),
             ("changeScale", "1"),
             ("pageNumEditor", "1"),
             ("nextPageSubmit", "1"),
-        ])
-        .unwrap_or_else(|e| {
-            error!("Failed to access the anchor page URL: {:?}", e);
-            panic!("Failed to access the anchor page URL");
-        });
+        ],
+        BASE_EBOOK_HOST,
+    );
 
     // -2でアクセスすると何故かうまく行く。ここは根拠がない
     for i in 0..(metadata.total_pages - 2) {
-        // 次のページにアクセス
-        let response = client
-            .post(&next_page_url)
-            .set("X-Requested-With", "XMLHttpRequest")
-            .set("Wicket-Ajax", "true")
-            .set("Wicket-Ajax-BaseURL", &BASE_EBOOK_HOST)
-            // パラメータを設定
-            .send_form(&[
+        // POSTリクエスト: データフェッチ関数に切り出し
+        let html = fetch::fetch_post_html(
+            &client,
+            &next_page_url,
+            &[
                 ("id100_hf_0", ""),
                 ("changeScale", "1"),
+                // convert i to string on the fly
                 ("pageNumEditor", i.to_string().as_str()),
                 ("nextPageSubmit", "1"),
-            ])
-            // .call()
-            .unwrap_or_else(|e| {
-                error!("Failed to access the anchor page URL: {:?}", e);
-                panic!("Failed to access the anchor page URL");
-            });
-
-        let html = response.into_string().unwrap();
+            ],
+            BASE_EBOOK_HOST,
+        );
 
         let image_relative_url = parse_image_url::get_page_image_url(&html).unwrap_or_else(|e| {
             error!("Failed to parse the page image URL: {:?}", e);
