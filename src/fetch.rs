@@ -94,3 +94,22 @@ pub fn fetch_and_download_image(
     })?;
     Ok(())
 }
+
+pub fn skip_first_page(
+    client: &ureq::Agent,
+    next_page_url: &str,
+    base_host: &str,
+) -> Result<(), Box<dyn std::error::Error>> {
+    let _ = fetch_post_html(
+        client,
+        next_page_url,
+        &[
+            ("id100_hf_0", ""),
+            ("changeScale", "1"),
+            ("pageNumEditor", "1"),
+            ("nextPageSubmit", "1"),
+        ],
+        base_host,
+    );
+    Ok(())
+}
