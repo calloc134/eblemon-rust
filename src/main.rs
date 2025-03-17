@@ -7,7 +7,6 @@ use constants::{BASE_EBOOK_HOST, DOWNLOAD_BASE_DIR};
 use dialoguer::Input;
 use indicatif::ProgressBar;
 use log::{error, info};
-use parse_metadata::extract_metadata;
 use ureq::agent;
 
 fn main() -> Result<(), Box<dyn std::error::Error>> {
@@ -27,14 +26,8 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     info!("Successfully created a session. Start accessing the URL");
 
     // GETリクエスト: データフェッチ関数に切り出し
-    let (url, html) = fetch::fetch_html(&client, &url);
-    info!("Successfully fetched HTML. Start extracting metadata");
+    let (url, metadata) = fetch::fetch_metadata(&client, &url)?;
 
-    // メタデータを取得
-    let metadata = extract_metadata(&html).map_err(|e| {
-        error!("Failed to extract metadata: {:?}", e);
-        e
-    })?;
     info!(
         "Title: {}, Total pages: {}",
         metadata.title, metadata.total_pages
