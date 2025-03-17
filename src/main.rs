@@ -10,17 +10,17 @@ use log::{error, info};
 use parse_metadata::extract_metadata;
 use ureq::agent;
 
-fn main() {
+fn main() -> Result<(), Box<dyn std::error::Error>> {
     // ロガーの初期化
     env_logger::Builder::from_env(env_logger::Env::default().default_filter_or("info")).init();
     // まずURLを取得
     let url = Input::<String>::new()
         .with_prompt("Please input the URL of the target page")
         .interact()
-        .unwrap_or_else(|e| {
+        .map_err(|e| {
             error!("Failed to get the URL: {:?}", e);
-            panic!("Failed to get the URL");
-        });
+            e
+        })?;
 
     // セッションを作成
     let client = agent();
@@ -31,7 +31,10 @@ fn main() {
     info!("Successfully fetched HTML. Start extracting metadata");
 
     // メタデータを取得
-    let metadata = extract_metadata(&html).unwrap();
+    let metadata = extract_metadata(&html).map_err(|e| {
+        error!("Failed to extract metadata: {:?}", e);
+        e
+    })?;
     info!(
         "Title: {}, Total pages: {}",
         metadata.title, metadata.total_pages
@@ -48,10 +51,10 @@ fn main() {
 
     // ディレクトリが存在しない場合は作成
     if !std::path::Path::new(&download_dir).exists() {
-        std::fs::create_dir(&download_dir).unwrap_or_else(|e| {
+        std::fs::create_dir(&download_dir).map_err(|e| {
             error!("Failed to create the directory: {:?}", e);
-            panic!("Failed to create the directory");
-        });
+            e
+        })?;
     }
 
     // 次のページにアクセスするためのURLを作成
@@ -89,34 +92,33 @@ fn main() {
             BASE_EBOOK_HOST,
         );
 
-        let image_relative_url = parse_image_url::get_page_image_url(&html).unwrap_or_else(|e| {
-            error!("Failed to parse the page image URL: {:?}", e);
-            println!("i: {}", i);
-            println!("HTML: {}", html);
-            panic!("Failed to parse the page image URL");
-        });
+        let image_relative_url = parse_image_url::get_page_image_url(&html).map_err(|e| {
+            error!("Failed to parse the page image URL for page {}: {:?}", i, e);
+            e
+        })?;
 
         let image_url = format!("{}{}", BASE_EBOOK_HOST, image_relative_url);
 
         // ファイルのダウンロード
-        let response = client.get(&image_url).call().unwrap_or_else(|e| {
-            error!("Failed to download the image file: {:?}", e);
-            panic!("Failed to download the image file");
-        });
+        let response = client.get(&image_url).call().map_err(|e| {
+            error!("Failed to download the image file for page {}: {:?}", i, e);
+            e
+        })?;
         let mut output_image = std::fs::File::create(format!("{}/{}.jpg", download_dir, i + 1))
-            .unwrap_or_else(|e| {
-                error!("Failed to create the image file: {:?}", e);
-                panic!("Failed to create the image file");
-            });
+            .map_err(|e| {
+                error!("Failed to create the image file for page {}: {:?}", i, e);
+                e
+            })?;
 
-        std::io::copy(&mut response.into_reader(), &mut output_image).unwrap_or_else(|e| {
-            error!("Failed to write the image file: {:?}", e);
-            panic!("Failed to write the image file");
-        });
+        std::io::copy(&mut response.into_reader(), &mut output_image).map_err(|e| {
+            error!("Failed to write the image file for page {}: {:?}", i, e);
+            e
+        })?;
 
         bar.inc(1);
     }
 
     info!("All image files have been downloaded");
     bar.finish_with_message("Finished");
+    Ok(())
 }
