@@ -43,13 +43,11 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
         sanitize_to_filename::sanitize_to_filename(&metadata.title)
     );
 
-    // ディレクトリが存在しない場合は作成
-    if !std::path::Path::new(&download_dir).exists() {
-        std::fs::create_dir(&download_dir).map_err(|e| {
-            error!("Failed to create the directory: {:?}", e);
-            e
-        })?;
-    }
+    // Create the directory (and parents) in one call.
+    std::fs::create_dir_all(&download_dir).map_err(|e| {
+        error!("Failed to create the directory: {:?}", e);
+        e
+    })?;
 
     // 次のページにアクセスするためのURLを作成
     let next_page_url = next_page_url::create_next_page_url(&url);
@@ -58,10 +56,11 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     fetch::skip_first_page(&client, &next_page_url, BASE_EBOOK_HOST)?;
 
     // 取得の開始
+    // Calculate the number of pages to download.
+    let pages_to_download = metadata.total_pages.saturating_sub(2);
     // プログレスバーの初期化
-    let bar = ProgressBar::new((metadata.total_pages - 1).into());
-    // -2でアクセスすると何故かうまく行く。ここは根拠がない
-    for i in 0..(metadata.total_pages - 2) {
+    let bar = ProgressBar::new(pages_to_download.into());
+    for i in 0..pages_to_download {
         fetch::download_page_image(
             &client,
             &next_page_url,
