@@ -10,7 +10,7 @@ enum ParseError {
     PageImageURLTextContentNotFound,
 }
 
-pub fn get_page_image_url(html: &str) -> Result<String> {
+pub fn extract_page_image_url(html: &str) -> Result<String> {
     let document = Html::parse_fragment(html);
     let selector = Selector::parse(r#"span[name="_pageImageURL"]"#).unwrap();
     // Get the first matching element

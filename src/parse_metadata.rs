@@ -19,7 +19,11 @@ enum ParseError {
 }
 
 // New helper function to extract and trim text from the first matching element.
-fn extract_text(document: &Html, selector_str: &str, err: ParseError) -> Result<String> {
+fn extract_trimmed_text_by_selector(
+    document: &Html,
+    selector_str: &str,
+    err: ParseError,
+) -> Result<String> {
     let selector = Selector::parse(selector_str)
         .map_err(|_| anyhow!("Invalid selector for {}", selector_str))?;
     let element = document.select(&selector).next().ok_or(err)?;
@@ -27,15 +31,18 @@ fn extract_text(document: &Html, selector_str: &str, err: ParseError) -> Result<
 }
 
 // HTMLを解析してメタデータを取得する関数
-pub fn extract_metadata(html: &str) -> Result<Metadata> {
+pub fn parse_metadata_from_html(html: &str) -> Result<Metadata> {
     let document = Html::parse_document(html);
 
     // タイトルを取得
-    let title = extract_text(&document, "h1", ParseError::TitleNotFound)?;
+    let title = extract_trimmed_text_by_selector(&document, "h1", ParseError::TitleNotFound)?;
 
     // 全ページ数を取得
-    let total_pages_str =
-        extract_text(&document, "span.allpageno", ParseError::TotalPagesNotFound)?;
+    let total_pages_str = extract_trimmed_text_by_selector(
+        &document,
+        "span.allpageno",
+        ParseError::TotalPagesNotFound,
+    )?;
     let total_pages = total_pages_str
         .parse::<u32>()
         .context("Failed to parse total pages as u32")?;

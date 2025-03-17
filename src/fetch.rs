@@ -37,7 +37,7 @@ pub fn get_metadata_from_url(
     // HTML取得
     let (new_url, html) = get_html_from_url(client, url);
     // メタデータの加工
-    let metadata = parse_metadata::extract_metadata(&html).map_err(|e| {
+    let metadata = parse_metadata::parse_metadata_from_html(&html).map_err(|e| {
         log::error!("Failed to extract metadata: {:?}", e);
         e
     })?;
@@ -55,7 +55,7 @@ pub fn post_and_download_image(
     // POSTリクエストでHTMLを取得
     let html = get_html_from_post_form(client, url, form_params, base_host);
     // 画像の相対URLを取得
-    let image_relative_url = parse_image_url::get_page_image_url(&html).map_err(|e| {
+    let image_relative_url = parse_image_url::extract_page_image_url(&html).map_err(|e| {
         log::error!(
             "Failed to parse the page image URL for page {}: {:?}",
             page_number,
