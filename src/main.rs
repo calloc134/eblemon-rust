@@ -27,7 +27,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     info!("Successfully created a session. Start accessing the URL");
 
     // GETリクエスト: データフェッチ関数に切り出し
-    let (url, metadata) = fetch::fetch_metadata(&client, &url)?;
+    let (url, metadata) = fetch::get_metadata_from_url(&client, &url)?;
 
     info!(
         "Title: {}, Total pages: {}",
@@ -53,7 +53,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     let next_page_url = next_page_url::create_next_page_url(&url);
 
     // 先頭の白ページを飛ばすために1ページ目をスキップ
-    fetch::skip_first_page(&client, &next_page_url, BASE_EBOOK_HOST)?;
+    fetch::skip_initial_page(&client, &next_page_url, BASE_EBOOK_HOST)?;
 
     // 取得の開始
     // Calculate the number of pages to download.
@@ -61,7 +61,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     // プログレスバーの初期化
     let bar = ProgressBar::new(pages_to_download.into());
     for i in 0..pages_to_download {
-        fetch::download_page_image(
+        fetch::download_image_for_page(
             &client,
             &next_page_url,
             BASE_EBOOK_HOST,

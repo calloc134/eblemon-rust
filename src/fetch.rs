@@ -1,7 +1,7 @@
 use crate::parse_image_url;
 use crate::parse_metadata;
 
-pub fn fetch_html(client: &ureq::Agent, url: &str) -> (String, String) {
+pub fn get_html_from_url(client: &ureq::Agent, url: &str) -> (String, String) {
     let response = client.get(url).call().unwrap_or_else(|e| {
         log::error!("Failed to access the URL: {:?}", e);
         panic!("Failed to access the URL")
@@ -11,7 +11,7 @@ pub fn fetch_html(client: &ureq::Agent, url: &str) -> (String, String) {
     (new_url, html)
 }
 
-pub fn fetch_post_html(
+pub fn get_html_from_post_form(
     client: &ureq::Agent,
     url: &str,
     form_params: &[(&str, &str)],
@@ -30,12 +30,12 @@ pub fn fetch_post_html(
     response.into_string().unwrap()
 }
 
-pub fn fetch_metadata(
+pub fn get_metadata_from_url(
     client: &ureq::Agent,
     url: &str,
 ) -> Result<(String, parse_metadata::Metadata), Box<dyn std::error::Error>> {
     // HTML取得
-    let (new_url, html) = fetch_html(client, url);
+    let (new_url, html) = get_html_from_url(client, url);
     // メタデータの加工
     let metadata = parse_metadata::extract_metadata(&html).map_err(|e| {
         log::error!("Failed to extract metadata: {:?}", e);
@@ -44,7 +44,7 @@ pub fn fetch_metadata(
     Ok((new_url, metadata))
 }
 
-pub fn fetch_and_download_image(
+pub fn post_and_download_image(
     client: &ureq::Agent,
     url: &str,
     form_params: &[(&str, &str)],
@@ -53,7 +53,7 @@ pub fn fetch_and_download_image(
     page_number: u32,
 ) -> Result<(), Box<dyn std::error::Error>> {
     // POSTリクエストでHTMLを取得
-    let html = fetch_post_html(client, url, form_params, base_host);
+    let html = get_html_from_post_form(client, url, form_params, base_host);
     // 画像の相対URLを取得
     let image_relative_url = parse_image_url::get_page_image_url(&html).map_err(|e| {
         log::error!(
@@ -95,7 +95,7 @@ pub fn fetch_and_download_image(
     Ok(())
 }
 
-pub fn download_page_image(
+pub fn download_image_for_page(
     client: &ureq::Agent,
     url: &str,
     base_host: &str,
@@ -109,7 +109,7 @@ pub fn download_page_image(
         ("pageNumEditor", page_str.as_str()),
         ("nextPageSubmit", "1"),
     ];
-    fetch_and_download_image(
+    post_and_download_image(
         client,
         url,
         &form_params,
@@ -119,12 +119,12 @@ pub fn download_page_image(
     )
 }
 
-pub fn skip_first_page(
+pub fn skip_initial_page(
     client: &ureq::Agent,
     next_page_url: &str,
     base_host: &str,
 ) -> Result<(), Box<dyn std::error::Error>> {
-    let _ = fetch_post_html(
+    let _ = get_html_from_post_form(
         client,
         next_page_url,
         &[
