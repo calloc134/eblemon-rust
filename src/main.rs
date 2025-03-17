@@ -1,8 +1,9 @@
 mod constants;
 mod fetch;
+mod next_page_url;
 mod parse_image_url;
 mod parse_metadata;
-mod sanitize_to_filename; // added new module
+mod sanitize_to_filename;
 use constants::{BASE_EBOOK_HOST, DOWNLOAD_BASE_DIR};
 use dialoguer::Input;
 use indicatif::ProgressBar;
@@ -51,7 +52,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     }
 
     // 次のページにアクセスするためのURLを作成
-    let next_page_url = format!("{}-1.IBehaviorListener.0-browseForm-nextPageSubmit", url);
+    let next_page_url = next_page_url::create_next_page_url(&url);
 
     // プログレスバーの初期化
     let bar = ProgressBar::new((metadata.total_pages - 1).into());
