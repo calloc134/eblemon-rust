@@ -1,3 +1,4 @@
+use crate::parse_image_url;
 use crate::parse_metadata;
 
 pub fn fetch_html(client: &ureq::Agent, url: &str) -> (String, String) {
@@ -41,4 +42,55 @@ pub fn fetch_metadata(
         e
     })?;
     Ok((new_url, metadata))
+}
+
+pub fn fetch_and_download_image(
+    client: &ureq::Agent,
+    url: &str,
+    form_params: &[(&str, &str)],
+    base_host: &str,
+    download_dir: &str,
+    page_number: u32,
+) -> Result<(), Box<dyn std::error::Error>> {
+    // POSTリクエストでHTMLを取得
+    let html = fetch_post_html(client, url, form_params, base_host);
+    // 画像の相対URLを取得
+    let image_relative_url = parse_image_url::get_page_image_url(&html).map_err(|e| {
+        log::error!(
+            "Failed to parse the page image URL for page {}: {:?}",
+            page_number,
+            e
+        );
+        e
+    })?;
+    // 絶対URLを構築
+    let image_url = format!("{}{}", base_host, image_relative_url);
+    // GETで画像をダウンロード
+    let response = client.get(&image_url).call().map_err(|e| {
+        log::error!(
+            "Failed to download the image file for page {}: {:?}",
+            page_number,
+            e
+        );
+        e
+    })?;
+    // 画像ファイルの保存
+    let file_path = format!("{}/{}.jpg", download_dir, page_number);
+    let mut output_image = std::fs::File::create(&file_path).map_err(|e| {
+        log::error!(
+            "Failed to create the image file for page {}: {:?}",
+            page_number,
+            e
+        );
+        e
+    })?;
+    std::io::copy(&mut response.into_reader(), &mut output_image).map_err(|e| {
+        log::error!(
+            "Failed to write the image file for page {}: {:?}",
+            page_number,
+            e
+        );
+        e
+    })?;
+    Ok(())
 }

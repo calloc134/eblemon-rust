@@ -71,43 +71,19 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
 
     // -2でアクセスすると何故かうまく行く。ここは根拠がない
     for i in 0..(metadata.total_pages - 2) {
-        // POSTリクエスト: データフェッチ関数に切り出し
-        let html = fetch::fetch_post_html(
+        fetch::fetch_and_download_image(
             &client,
             &next_page_url,
             &[
                 ("id100_hf_0", ""),
                 ("changeScale", "1"),
-                // convert i to string on the fly
                 ("pageNumEditor", i.to_string().as_str()),
                 ("nextPageSubmit", "1"),
             ],
             BASE_EBOOK_HOST,
-        );
-
-        let image_relative_url = parse_image_url::get_page_image_url(&html).map_err(|e| {
-            error!("Failed to parse the page image URL for page {}: {:?}", i, e);
-            e
-        })?;
-
-        let image_url = format!("{}{}", BASE_EBOOK_HOST, image_relative_url);
-
-        // ファイルのダウンロード
-        let response = client.get(&image_url).call().map_err(|e| {
-            error!("Failed to download the image file for page {}: {:?}", i, e);
-            e
-        })?;
-        let mut output_image = std::fs::File::create(format!("{}/{}.jpg", download_dir, i + 1))
-            .map_err(|e| {
-                error!("Failed to create the image file for page {}: {:?}", i, e);
-                e
-            })?;
-
-        std::io::copy(&mut response.into_reader(), &mut output_image).map_err(|e| {
-            error!("Failed to write the image file for page {}: {:?}", i, e);
-            e
-        })?;
-
+            &download_dir,
+            i + 1,
+        )?;
         bar.inc(1);
     }
 
