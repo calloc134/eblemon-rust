@@ -54,12 +54,12 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     // 次のページにアクセスするためのURLを作成
     let next_page_url = next_page_url::create_next_page_url(&url);
 
-    // プログレスバーの初期化
-    let bar = ProgressBar::new((metadata.total_pages - 1).into());
-
     // 先頭の白ページを飛ばすために1ページ目をスキップ
     fetch::skip_first_page(&client, &next_page_url, BASE_EBOOK_HOST)?;
 
+    // 取得の開始
+    // プログレスバーの初期化
+    let bar = ProgressBar::new((metadata.total_pages - 1).into());
     // -2でアクセスすると何故かうまく行く。ここは根拠がない
     for i in 0..(metadata.total_pages - 2) {
         fetch::download_page_image(
