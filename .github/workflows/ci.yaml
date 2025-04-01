@@ -1,34 +1,24 @@
-# .github/workflows/ci-typecheck.yml
+# .github/workflows/check.yml
 
-name: CI - Typecheck (Windows)
+name: Type Check
 
-# すべてのブランチへの push と pull_request でワークフローを実行
 on:
   push:
-    branches: ["**"]
+    branches:
+      - main
   pull_request:
-    branches: ["**"]
+    branches:
+      - main
 
 jobs:
-  typecheck-windows:
-    name: Run cargo check on Windows
-    runs-on: windows-latest # 実行環境を Windows に指定
-
+  check:
+    name: Type Check
+    runs-on: ubuntu-latest
     steps:
-      # 1. リポジトリのコードをチェックアウト
-      - name: Checkout code
-        uses: actions/checkout@v4
-
-      # 2. Rust ツールチェイン (stable) をセットアップ
-      - name: Setup Rust toolchain
+      - uses: actions/checkout@v4
+      - name: Setup Rust
         uses: dtolnay/rust-toolchain@stable
         with:
           toolchain: stable
-          # cargo check には通常 target 指定は不要
-
-      # --- オプション: ビルドキャッシュの設定 --
-      # 3. cargo check を実行して型チェックを行う
-      #    --all-targets はワークスペース内の全てのクレートをチェックする場合に有用です
-      #    シンプルなプロジェクトなら単に `cargo check` でもOKです
-      - name: Run cargo check
-        run: cargo check --all-targets --verbose
+      - name: Type Check
+        run: cargo check
