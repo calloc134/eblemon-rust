@@ -18,27 +18,31 @@ enum ParseError {
     TotalPagesNotFound,
 }
 
+// New helper function to extract and trim text from the first matching element.
+fn extract_trimmed_text_by_selector(
+    document: &Html,
+    selector_str: &str,
+    err: ParseError,
+) -> Result<String> {
+    let selector = Selector::parse(selector_str)
+        .map_err(|_| anyhow!("Invalid selector for {}", selector_str))?;
+    let element = document.select(&selector).next().ok_or(err)?;
+    Ok(element.inner_html().trim().to_string())
+}
+
 // HTMLを解析してメタデータを取得する関数
-pub fn extract_metadata(html: &str) -> Result<Metadata> {
+pub fn parse_metadata_from_html(html: &str) -> Result<Metadata> {
     let document = Html::parse_document(html);
 
     // タイトルを取得
-    let title_selector =
-        Selector::parse("h1").map_err(|_| anyhow!("Invalid selector for title"))?;
-    let title_element = document
-        .select(&title_selector)
-        .next()
-        .ok_or(ParseError::TitleNotFound)?;
-    let title = title_element.inner_html();
+    let title = extract_trimmed_text_by_selector(&document, "h1", ParseError::TitleNotFound)?;
 
     // 全ページ数を取得
-    let total_pages_selector = Selector::parse("span.allpageno")
-        .map_err(|_| anyhow!("Invalid selector for total pages"))?;
-    let total_pages_element = document
-        .select(&total_pages_selector)
-        .next()
-        .ok_or(ParseError::TotalPagesNotFound)?;
-    let total_pages_str = total_pages_element.inner_html();
+    let total_pages_str = extract_trimmed_text_by_selector(
+        &document,
+        "span.allpageno",
+        ParseError::TotalPagesNotFound,
+    )?;
     let total_pages = total_pages_str
         .parse::<u32>()
         .context("Failed to parse total pages as u32")?;

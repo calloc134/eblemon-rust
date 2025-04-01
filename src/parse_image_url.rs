@@ -10,26 +10,18 @@ enum ParseError {
     PageImageURLTextContentNotFound,
 }
 
-pub fn get_page_image_url(html: &str) -> Result<String> {
+pub fn extract_page_image_url(html: &str) -> Result<String> {
     let document = Html::parse_fragment(html);
     let selector = Selector::parse(r#"span[name="_pageImageURL"]"#).unwrap();
-
-    let mut page_image_url_element = None;
-    for element in document.select(&selector) {
-        page_image_url_element = Some(element);
-        break;
-    }
-
-    let page_image_url_element = page_image_url_element.ok_or(ParseError::PageImageURLNotFound)?;
-
-    let mut text_content = String::new();
-    for text in page_image_url_element.text() {
-        text_content.push_str(text);
-    }
-
+    // Get the first matching element
+    let page_image_url_element = document
+        .select(&selector)
+        .next()
+        .ok_or(ParseError::PageImageURLNotFound)?;
+    // Collect all text content into a single String
+    let text_content: String = page_image_url_element.text().collect();
     if text_content.is_empty() {
         return Err(ParseError::PageImageURLTextContentNotFound.into());
     }
-
     Ok(text_content)
 }
