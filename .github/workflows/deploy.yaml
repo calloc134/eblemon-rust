@@ -1,0 +1,131 @@
+# .github/workflows/release.yml
+
+name: Release Build and Upload
+
+on:
+  release:
+    types: [created] # GitHub上でReleaseが作成されたときにトリガー
+
+jobs:
+  # --- ビルドジョブ ---
+  build:
+    name: Build (${{ matrix.target }})
+    # OSをマトリックスから動的に選択
+    runs-on: ${{ matrix.os == 'windows' && 'windows-latest' || matrix.os == 'macos' && 'macos-latest' || 'ubuntu-latest' }}
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          # Windows x86_64 (MSVC)
+          - target: x86_64-pc-windows-msvc
+            os: windows
+          # Linux x86_64 (MUSL for static linking)
+          - target: x86_64-unknown-linux-musl
+            os: linux
+          # macOS x86_64 (Intel)
+          - target: x86_64-apple-darwin
+            os: macos
+          # macOS aarch64 (Apple Silicon)
+          - target: aarch64-apple-darwin
+            os: macos
+
+    steps:
+      # 1. リポジトリのコードをチェックアウト
+      - uses: actions/checkout@v4
+
+      # 2. Rustツールチェインを設定 (指定されたターゲットもインストール)
+      - name: Setup Rust toolchain
+        uses: dtolnay/rust-toolchain@stable
+        with:
+          toolchain: stable
+          targets: ${{ matrix.target }}
+          # components: rust-src rustc-dev llvm-tools-preview # 必要に応じてコメント解除
+
+      # 3. Linux (musl) ビルドに必要なツールをインストール
+      - name: Install musl-tools for Linux MUSL target
+        if: matrix.os == 'linux' && contains(matrix.target, '-musl')
+        run: |
+          sudo apt-get update -y
+          sudo apt-get install -y musl-tools
+
+      # 4. プロジェクトをビルド (リリースモード、指定ターゲット向け)
+      - name: Build binary
+        run: cargo build --verbose --release --target ${{ matrix.target }}
+
+      # 5. ビルドされた成果物をアップロード
+      #    成果物名はターゲット名 (例: x86_64-pc-windows-msvc)
+      #    アップロードパスは Cargo.toml の name に合わせる
+      - name: Upload artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: ${{ matrix.target }} # アーティファクト名をターゲット名にする
+          path: |
+            target/${{ matrix.target }}/release/eblemon-rust${{ matrix.os == 'windows' && '.exe' || '' }}
+          if-no-files-found: error # ファイルが見つからない場合はエラー
+          overwrite: true # 同じ名前のアーティファクトがあれば上書き
+
+  # --- リリース作成ジョブ ---
+  create_release:
+    name: Create Release Assets
+    runs-on: ubuntu-latest
+    needs: [build] # buildジョブが完了してから実行
+    permissions:
+      contents: write # リリースを作成・編集するために必要
+
+    steps:
+      # 1. 各ビルドジョブから成果物をダウンロード
+      #    'artifacts' ディレクトリ以下に、ターゲット名のサブディレクトリとして展開される
+      - name: Download all build artifacts
+        uses: actions/download-artifact@v4
+        with:
+          path: artifacts # artifactsディレクトリに全アーティファクトをダウンロード
+
+      # 2. 成果物の名前を変更して配布形式にする
+      - name: Rename artifacts for release
+        run: |
+          cd artifacts
+          echo "Downloaded artifacts structure:"
+          ls -R
+          echo "---"
+          # 各ターゲットディレクトリ (例: x86_64-pc-windows-msvc) をループ
+          for target_dir in *; do
+            if [ -d "$target_dir" ]; then
+              # 実行ファイル名 (Cargo.tomlのname)
+              local_exe_name="eblemon-rust"
+              # Windowsの場合は拡張子を追加
+              local_extension=""
+              if [[ "$target_dir" == *"-windows-"* ]]; then
+                local_extension=".exe"
+              fi
+              # 元のファイルパス
+              original_file_path="$target_dir/${local_exe_name}${local_extension}"
+              # 新しいファイル名 (例: eblemon-rust-v1.0.0-x86_64-pc-windows-msvc.exe)
+              # GITHUB_REF_NAME はトリガーとなったタグ名 (例: v1.0.0)
+              new_file_name="../${local_exe_name}-${{ github.ref_name }}-${target_dir}${local_extension}"
+
+              if [ -f "$original_file_path" ]; then
+                echo "Renaming '$original_file_path' to '$new_file_name'"
+                mv "$original_file_path" "$new_file_name"
+              else
+                echo "Error: Expected file not found at '$original_file_path'"
+                exit 1
+              fi
+              # 空になったターゲットディレクトリを削除
+              rmdir "$target_dir"
+            fi
+          done
+          cd ..
+          echo "---"
+          echo "Renamed artifacts:"
+          ls -l artifacts
+
+      # 3. GitHub Releaseを作成し、名前変更した成果物をアップロード
+      - name: Create GitHub Release
+        uses: softprops/action-gh-release@v2
+        with:
+          # リリース名にはタグ名を使用
+          name: ${{ github.ref_name }}
+          # artifacts ディレクトリ内の全ファイルをアップロード
+          files: artifacts/*
+          # リリースノートを自動生成 (オプション)
+          generate_release_notes: true
