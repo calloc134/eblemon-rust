@@ -13,12 +13,10 @@ enum ParseError {
 pub fn extract_page_image_url(html: &str) -> Result<String> {
     let document = Html::parse_fragment(html);
     let selector = Selector::parse(r#"span[name="_pageImageURL"]"#).unwrap();
-    // Get the first matching element
     let page_image_url_element = document
         .select(&selector)
         .next()
         .ok_or(ParseError::PageImageURLNotFound)?;
-    // Collect all text content into a single String
     let text_content: String = page_image_url_element.text().collect();
     if text_content.is_empty() {
         return Err(ParseError::PageImageURLTextContentNotFound.into());

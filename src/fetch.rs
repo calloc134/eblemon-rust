@@ -34,9 +34,7 @@ pub fn get_metadata_from_url(
     client: &ureq::Agent,
     url: &str,
 ) -> Result<(String, parse_metadata::Metadata), Box<dyn std::error::Error>> {
-    // HTML取得
     let (new_url, html) = get_html_from_url(client, url);
-    // メタデータの加工
     let metadata = parse_metadata::parse_metadata_from_html(&html).map_err(|e| {
         log::error!("Failed to extract metadata: {:?}", e);
         e
@@ -52,9 +50,7 @@ pub fn post_and_download_image(
     download_dir: &str,
     page_number: u32,
 ) -> Result<(), Box<dyn std::error::Error>> {
-    // POSTリクエストでHTMLを取得
     let html = get_html_from_post_form(client, url, form_params, base_host);
-    // 画像の相対URLを取得
     let image_relative_url = parse_image_url::extract_page_image_url(&html).map_err(|e| {
         log::error!(
             "Failed to parse the page image URL for page {}: {:?}",
@@ -63,9 +59,7 @@ pub fn post_and_download_image(
         );
         e
     })?;
-    // 絶対URLを構築
     let image_url = format!("{}{}", base_host, image_relative_url);
-    // GETで画像をダウンロード
     let response = client.get(&image_url).call().map_err(|e| {
         log::error!(
             "Failed to download the image file for page {}: {:?}",
@@ -74,7 +68,6 @@ pub fn post_and_download_image(
         );
         e
     })?;
-    // 画像ファイルの保存
     let file_path = format!("{}/{}.jpg", download_dir, page_number);
     let mut output_image = std::fs::File::create(&file_path).map_err(|e| {
         log::error!(

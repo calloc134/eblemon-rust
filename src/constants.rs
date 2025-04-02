@@ -7,7 +7,6 @@ pub struct Config {
 }
 
 pub fn load_config() -> Result<Config, Box<dyn std::error::Error>> {
-    // Reads the configuration from "eblemon.toml"
     let contents = std::fs::read_to_string("eblemon.toml")?;
     let config: Config = toml::from_str(&contents)?;
     Ok(config)
