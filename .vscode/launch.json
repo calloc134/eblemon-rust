@@ -7,11 +7,11 @@
     {
       "type": "lldb",
       "request": "launch",
-      "name": "Debug executable 'eblemon-rust'",
+      "name": "Debug executable 'eblemon'",
       "cargo": {
-        "args": ["build", "--bin=eblemon-rust", "--package=eblemon-rust"],
+        "args": ["build", "--bin=eblemon", "--package=eblemon"],
         "filter": {
-          "name": "eblemon-rust",
+          "name": "eblemon",
           "kind": "bin"
         }
       },
@@ -21,16 +21,11 @@
     {
       "type": "lldb",
       "request": "launch",
-      "name": "Debug unit tests in executable 'eblemon-rust'",
+      "name": "Debug unit tests in executable 'eblemon'",
       "cargo": {
-        "args": [
-          "test",
-          "--no-run",
-          "--bin=eblemon-rust",
-          "--package=eblemon-rust"
-        ],
+        "args": ["test", "--no-run", "--bin=eblemon", "--package=eblemon"],
         "filter": {
-          "name": "eblemon-rust",
+          "name": "eblemon",
           "kind": "bin"
         }
       },

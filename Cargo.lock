@@ -285,7 +285,7 @@ dependencies = [
 ]
 
 [[package]]
-name = "eblemon-rust"
+name = "eblemon"
 version = "0.1.0"
 dependencies = [
  "anyhow",

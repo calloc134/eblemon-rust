@@ -60,7 +60,7 @@ jobs:
         with:
           name: ${{ matrix.target }} # アーティファクト名をターゲット名にする
           path: |
-            target/${{ matrix.target }}/release/eblemon-rust${{ matrix.os == 'windows' && '.exe' || '' }}
+            target/${{ matrix.target }}/release/eblemon${{ matrix.os == 'windows' && '.exe' || '' }}
           if-no-files-found: error # ファイルが見つからない場合はエラー
           overwrite: true # 同じ名前のアーティファクトがあれば上書き
 
@@ -93,7 +93,7 @@ jobs:
           for target_dir in *; do
             if [ -d "$target_dir" ]; then
               # 実行ファイル名 (Cargo.tomlのname)
-              local_exe_name="eblemon-rust"
+              local_exe_name="eblemon"
               # Windowsの場合は拡張子を追加
               local_extension=""
               if [[ "$target_dir" == *"-windows-"* ]]; then
