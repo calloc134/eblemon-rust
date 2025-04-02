@@ -13,7 +13,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     // ロガーの初期化
     env_logger::Builder::from_env(env_logger::Env::default().default_filter_or("info")).init();
 
-    // Load configuration from ebolemon.toml
+    // 設定を読み込む
     let config = constants::load_config()?;
 
     // まずURLを取得
@@ -46,7 +46,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
         sanitize_to_filename::sanitize_to_filename(&metadata.title)
     );
 
-    // Create the directory (and parents) in one call.
+    // ディレクトリを作成
     std::fs::create_dir_all(&download_dir).map_err(|e| {
         error!("Failed to create the directory: {:?}", e);
         e
@@ -59,7 +59,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     fetch::skip_initial_page(&client, &next_page_url, &config.base_ebook_host)?;
 
     // 取得の開始
-    // Calculate the number of pages to download.
+    // ページ数の計算
     let pages_to_download = metadata.total_pages.saturating_sub(2);
     // プログレスバーの初期化
     let bar = ProgressBar::new(pages_to_download.into());
