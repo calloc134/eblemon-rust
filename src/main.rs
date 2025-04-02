@@ -4,7 +4,6 @@ mod next_page_url;
 mod parse_image_url;
 mod parse_metadata;
 mod sanitize_to_filename;
-use constants::{BASE_EBOOK_HOST, DOWNLOAD_BASE_DIR};
 use dialoguer::Input;
 use indicatif::ProgressBar;
 use log::{error, info};
@@ -13,6 +12,10 @@ use ureq::agent;
 fn main() -> Result<(), Box<dyn std::error::Error>> {
     // ロガーの初期化
     env_logger::Builder::from_env(env_logger::Env::default().default_filter_or("info")).init();
+
+    // Load configuration from ebolemon.toml
+    let config = constants::load_config()?;
+
     // まずURLを取得
     let url = Input::<String>::new()
         .with_prompt("Please input the URL of the target page")
@@ -39,7 +42,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     // ダウンロード用のディレクトリを作成
     let download_dir = format!(
         "{}/{}",
-        DOWNLOAD_BASE_DIR,
+        config.download_base_dir,
         sanitize_to_filename::sanitize_to_filename(&metadata.title)
     );
 
@@ -53,7 +56,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     let next_page_url = next_page_url::create_next_page_url(&url);
 
     // 先頭の白ページを飛ばすために1ページ目をスキップ
-    fetch::skip_initial_page(&client, &next_page_url, BASE_EBOOK_HOST)?;
+    fetch::skip_initial_page(&client, &next_page_url, &config.base_ebook_host)?;
 
     // 取得の開始
     // Calculate the number of pages to download.
@@ -64,7 +67,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
         fetch::download_image_for_page(
             &client,
             &next_page_url,
-            BASE_EBOOK_HOST,
+            &config.base_ebook_host,
             &download_dir,
             i + 1,
         )?;
