@@ -13,6 +13,8 @@ indicatif = "0.17.9"
 log = "0.4.25"
 proconio = "0.5.0"
 scraper = "0.13"
+toml = "0.8.20"
+serde = { version = "1.0.219", features = ["derive"] } # 最新バージョンを確認
 thiserror = "2.0.11"
 # ureq = "2.12.1"
 ureq = { version = "2.12.1", features = ["cookies"] }
