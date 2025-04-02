@@ -1,0 +1,5 @@
+# Example configuration file for ebolemon
+
+# base_ebook_host = "URL of the ebook host"
+base_ebook_host = ""
+download_base_dir = "downloads"
