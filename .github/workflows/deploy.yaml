@@ -83,13 +83,13 @@ jobs:
       # 2. 成果物の名前を変更して配布形式にする
       - name: Rename artifacts for release
         run: |
-          pwd # 現在のディレクトリを確認 (ワークフローのルートのはず)
+          pwd # 現在のディレクトリを確認
           cd artifacts
           echo "Current directory: $(pwd)" # artifacts ディレクトリにいることを確認
           echo "Downloaded artifacts structure:"
           ls -R
           echo "---"
-          # 各ターゲットディレクトリ (例: x86_64-pc-windows-msvc) をループ
+          # 各ターゲットディレクトリをループ
           for target_dir in *; do
             if [ -d "$target_dir" ]; then
               # 実行ファイル名 (Cargo.tomlのname)
@@ -101,8 +101,7 @@ jobs:
               fi
               # 元のファイルパス
               original_file_path="$target_dir/${local_exe_name}${local_extension}"
-              # 新しいファイル名 (例: eblemon-rust-beta2-x86_64-pc-windows-msvc.exe)
-              # ↓↓↓↓ ここを修正: ../ を削除 ↓↓↓↓
+              # 新しいファイル名を作成
               new_file_name="${local_exe_name}-${{ github.ref_name }}-${target_dir}${local_extension}"
 
               if [ -f "$original_file_path" ]; then
@@ -118,7 +117,6 @@ jobs:
             fi
           done
           echo "---"
-          # ↓↓↓↓ ここを修正: カレントディレクトリ (artifacts) の内容を表示 ↓↓↓↓
           echo "Renamed artifacts in $(pwd):"
           ls -l
 
