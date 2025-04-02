@@ -29,7 +29,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     let client = agent();
     info!("Successfully created a session. Start accessing the URL");
 
-    // GETリクエスト: データフェッチ関数に切り出し
+    // メタデータ取得
     let (url, metadata) = fetch::get_metadata_from_url(&client, &url)?;
 
     info!(
@@ -45,8 +45,6 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
         config.download_base_dir,
         sanitize_to_filename::sanitize_to_filename(&metadata.title)
     );
-
-    // ディレクトリを作成
     std::fs::create_dir_all(&download_dir).map_err(|e| {
         error!("Failed to create the directory: {:?}", e);
         e
