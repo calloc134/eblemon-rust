@@ -83,7 +83,9 @@ jobs:
       # 2. 成果物の名前を変更して配布形式にする
       - name: Rename artifacts for release
         run: |
+          pwd # 現在のディレクトリを確認 (ワークフローのルートのはず)
           cd artifacts
+          echo "Current directory: $(pwd)" # artifacts ディレクトリにいることを確認
           echo "Downloaded artifacts structure:"
           ls -R
           echo "---"
@@ -99,12 +101,13 @@ jobs:
               fi
               # 元のファイルパス
               original_file_path="$target_dir/${local_exe_name}${local_extension}"
-              # 新しいファイル名 (例: eblemon-rust-v1.0.0-x86_64-pc-windows-msvc.exe)
-              # GITHUB_REF_NAME はトリガーとなったタグ名 (例: v1.0.0)
-              new_file_name="../${local_exe_name}-${{ github.ref_name }}-${target_dir}${local_extension}"
+              # 新しいファイル名 (例: eblemon-rust-beta2-x86_64-pc-windows-msvc.exe)
+              # ↓↓↓↓ ここを修正: ../ を削除 ↓↓↓↓
+              new_file_name="${local_exe_name}-${{ github.ref_name }}-${target_dir}${local_extension}"
 
               if [ -f "$original_file_path" ]; then
                 echo "Renaming '$original_file_path' to '$new_file_name'"
+                # ↓↓↓↓ ここを修正: mv でファイルをカレントディレクトリ (artifacts) 直下に移動 ↓↓↓↓
                 mv "$original_file_path" "$new_file_name"
               else
                 echo "Error: Expected file not found at '$original_file_path'"
@@ -114,18 +117,16 @@ jobs:
               rmdir "$target_dir"
             fi
           done
-          cd ..
           echo "---"
-          echo "Renamed artifacts:"
-          ls -l artifacts
+          # ↓↓↓↓ ここを修正: カレントディレクトリ (artifacts) の内容を表示 ↓↓↓↓
+          echo "Renamed artifacts in $(pwd):"
+          ls -l
 
       # 3. GitHub Releaseを作成し、名前変更した成果物をアップロード
       - name: Create GitHub Release
         uses: softprops/action-gh-release@v2
         with:
-          # リリース名にはタグ名を使用
           name: ${{ github.ref_name }}
-          # artifacts ディレクトリ内の全ファイルをアップロード
+          # artifacts ディレクトリ内の全ファイルをアップロード (ここは変更不要)
           files: artifacts/*
-          # リリースノートを自動生成 (オプション)
           generate_release_notes: true
